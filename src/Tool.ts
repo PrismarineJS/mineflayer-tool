@@ -1,13 +1,15 @@
 import { Bot } from 'mineflayer';
 import { Block } from 'prismarine-block';
 import { Item } from 'prismarine-item';
+import { retrieveTools, standardToolFilter } from './Inventory';
+import { Vec3 } from 'vec3';
 
 // @ts-expect-error ; nbt has no typescript header
 import * as nbt from 'prismarine-nbt';
 
 export type Callback = (err?: Error) => void;
 
-function error(name: string, message: string): Error
+export function error(name: string, message: string): Error
 {
     const e = new Error(message);
     e.name = name;
@@ -27,17 +29,53 @@ export interface MiningEquipOptions
      * Defaults to false.
      */
     requireHarvest?: boolean;
+
+    /**
+     * If set to true, the bot will attempt to retrieve a tool from the chest if
+     * there is not a suitable tool currently in the bot's inventory.
+     * 
+     * Defaults to false.
+     */
+    getFromChest?: boolean;
+    
+    /**
+     * If using the `getFromChest` flag, what is the maximum number of tools allowed
+     * to be pulled from the chest at once? Defaults to 1.
+     */
+    maxTools?: number;
 }
 
+/**
+ * The main class object for the tool plugin.
+ */
 export class Tool
 {
     private readonly bot: Bot;
 
+    /**
+     * A list of chest locations that the bot is allowed to retrieve items from
+     * when using the "getFromChest" option.
+     */
+    readonly chestLocations: Vec3[] = [];
+
+    /**
+     * Creates a new tool plugin instance.
+     * 
+     * @param bot - The bot the plugin is running on.
+     */
     constructor(bot: Bot)
     {
         this.bot = bot;
     }
 
+    /**
+     * Gets the number of ticks required to mine the target block with the given item.
+     * 
+     * @param block - The block to test against.
+     * @param item - The item to test with.
+     * 
+     * @returns The number of ticks it would take to mine.
+     */
     private getDigTime(block: Block, item?: Item): number
     {
         // @ts-expect-error ; entity effects not in typescript header
@@ -62,8 +100,11 @@ export class Tool
      * 
      * @param block - The block to test against.
      * @param itemList - The item list to test against.
+     * 
+     * @returns True if the items in the list are better. False if they are worse or
+     *          equal to what's already in the bot's hand.
      */
-    private isBetterMiningTool(block: Block, itemList: Item[]): boolean
+    private isBetterMiningTool(block: Block, itemList: (Item | undefined)[]): boolean
     {
         const item = this.itemInHand();
         if (!item) return true;
@@ -82,15 +123,33 @@ export class Tool
      */
     equipForBlock(block: Block, options: MiningEquipOptions = {}, cb: Callback = () => {}): void
     {
-        let itemList = [...this.bot.inventory.items()];
+        let itemList: (Item | undefined)[] = [...this.bot.inventory.items()];
+
+        // Add an "undefined" item if the bot has empty space in it's inventory.
+        if (this.bot.inventory.emptySlotCount() >= 1)
+            itemList.unshift(undefined);
         
         if (options.requireHarvest)
-            itemList = itemList.filter(item => block.canHarvest(item.type));
+            itemList = itemList.filter(item => block.canHarvest(item ? item.type : null));
 
         itemList.sort((a, b) => this.getDigTime(block, a) - this.getDigTime(block, b));
 
         if (itemList.length === 0)
         {
+            if (options.getFromChest)
+            {
+                retrieveTools(this.bot, {
+                    toolFilter: standardToolFilter,
+                    chestLocations: this.chestLocations,
+                    toolCostFilter: (item: Item) => this.getDigTime(block, item),
+                    maxTools: options.maxTools
+                }, (err) => {
+                    if (err) cb(err);
+                    else this.equipForBlock(block, options, cb);
+                });
+                return;
+            }
+
             if (options.requireHarvest)
                 cb(error('NoItem', 'Bot does not have a harvestable tool!'));
             else
@@ -108,6 +167,8 @@ export class Tool
             return;
         }
 
-        this.bot.equip(itemList[0], 'hand', cb);
+        const best = itemList[0];
+        if (best) this.bot.equip(best, 'hand', cb);
+        else this.bot.unequip('hand', cb);
     }
 }
