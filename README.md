@@ -19,19 +19,25 @@ This plugin is built using Node and can be installed using:
 npm install --save mineflayer-tool
 ```
 
-This plugin has a relies on [random-plugin]() for a-b-c. That plugin should be loaded first.
-
 ### Simple Bot
 
 The brief description goes here.
 
 ```js
-// Create your bot
-const mineflayer = require("mineflayer");
-const bot = mineflayer.createBot({ username: "Player" });
+const mineflayer = require('mineflayer')
+const toolPlugin = require('mineflayer-tool').plugin
 
-// Do stuff
-bot.doStuff()
+const bot = mineflayer.createBot({ username: 'MiningTool_Bot' })
+bot.loadPlugin(toolPlugin)
+
+bot.on('spawn', () => {
+  const blockPos = bot.entity.position.offset(0, -1, 0)
+  const block = bot.blockAt(blockPos)
+
+  bot.tool.equipForBlock(block, {}, () => {
+    bot.dig(block)
+  })
+ })
 ```
 
 ### Documentation
