@@ -16,3 +16,4 @@ export function plugin(bot: Bot): void
 }
 
 export MiningEquipOptions from './Tool'
+export Tool from './Tool'
