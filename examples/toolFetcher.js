@@ -35,7 +35,6 @@ bot.once('spawn', () => {
 
 // Listen for chat events
 bot.on('chat', (username, message) => {
-
   // Only listen for when someone says 'get tool'
   if (message !== 'mine') return
 

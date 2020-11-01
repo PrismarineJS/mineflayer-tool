@@ -24,7 +24,6 @@ bot.loadPlugin(toolPlugin)
 
 // Listen for chat events
 bot.on('chat', (username, message) => {
-
   // Only listen for when someone says 'get tool'
   if (message !== 'get tool') return
 
@@ -52,12 +51,12 @@ bot.on('chat', (username, message) => {
    * const equipOptions = {
    *   requireHarvest: true
    * }
-   * 
+   *
    * const callback = (err) => {
    *   if (err) console.log(err)
    *   else bot.dig(block)
    * }
-   * 
+   *
    * bot.tool.equipForBlock(block, options, callback)
    */
 })
