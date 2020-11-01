@@ -14,3 +14,6 @@ export function plugin (bot: Bot): void {
   // @ts-expect-error
   bot.tool = new Tool(bot)
 }
+
+export { MiningEquipOptions } from './Tool'
+export { Tool } from './Tool'
