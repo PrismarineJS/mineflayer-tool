@@ -2,7 +2,7 @@ import { Bot } from 'mineflayer'
 import { Vec3 } from 'vec3'
 import { error, Callback } from './Tool'
 import { Item } from 'prismarine-item'
-import { goals, Result } from 'mineflayer-pathfinder'
+import { goals, ComputedPath } from 'mineflayer-pathfinder'
 import { TemporarySubscriber, TaskQueue } from 'mineflayer-utils'
 
 /**
@@ -98,9 +98,9 @@ export function retrieveTools (bot: Bot, options: ToolRetrievalOptions, cb: Call
         return
       }
 
-      pullFromChest(bot, chest, options, (err: Error | undefined, gotItem: boolean) => {
-        if (err != null) {
-          cb(err)
+      pullFromChest(bot, chest, options, (err2: Error | undefined, gotItem: boolean) => {
+        if (err2 != null) {
+          cb(err2)
           return
         }
 
@@ -136,7 +136,7 @@ function gotoChest (bot: Bot, location: Vec3, cb: Callback): void {
     cb()
   })
 
-  events.subscribeTo('path_update', (results: Result) => {
+  events.subscribeTo('path_update', (results: ComputedPath) => {
     if (results.status === 'noPath') {
       events.cleanup()
       cb(error('NoPath', 'No path to target block!'))
@@ -172,13 +172,19 @@ function pullFromChest (bot: Bot, chestPos: Vec3, options: ToolRetrievalOptions,
     itemsToPull.sort((a, b) => options.toolCostFilter(a) - options.toolCostFilter(b))
 
     const maxTools = options.maxTools ?? 1
-    if (itemsToPull.length > maxTools) { itemsToPull = itemsToPull.slice(0, maxTools) }
+    if (itemsToPull.length > maxTools) {
+      itemsToPull = itemsToPull.slice(0, maxTools)
+    }
 
     const taskQueue = new TaskQueue()
-    for (const item of itemsToPull) { taskQueue.add(cb => chest.withdraw(item.type, item.metadata, item.count, cb)) }
+    for (const item of itemsToPull) {
+      taskQueue.add(cb2 => {
+        chest.withdraw(item.type, item.metadata, item.count).then(() => cb2).catch(err => cb2(err))
+      })
+    }
 
     taskQueue.addSync(() => chest.close())
-    taskQueue.add(cb => setTimeout(cb, 200)) // Wait for server to update inventory
+    taskQueue.add(cb2 => setTimeout(cb2, 200)) // Wait for server to update inventory
     taskQueue.runAll(err => {
       if (err != null) {
         cb(err, false)
