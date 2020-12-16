@@ -158,7 +158,10 @@ export class Tool {
     }
 
     const best = itemList[0]
-    if (best != null) this.bot.equip(best, 'hand', cb)
-    else this.bot.unequip('hand', cb)
+    if (best != null) {
+      this.bot.equip(best, 'hand').then(() => cb()).catch(err => cb(err))
+    } else {
+      this.bot.unequip('hand').then(() => cb()).catch(err => cb(err))
+    }
   }
 }
