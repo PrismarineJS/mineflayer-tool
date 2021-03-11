@@ -72,7 +72,7 @@ export class Tool {
      *
      * @returns The number of ticks it would take to mine.
      */
-  private getDigTime (block: Block, item?: Item): number { 
+  private getDigTime (block: Block, item?: Item): number {
     const effects = this.bot.entity.effects
     const enchants = item?.nbt != null ? nbt.simplify(item.nbt).Enchantments : []
     return block.digTime(item?.type, false, false, false, enchants, effects)
