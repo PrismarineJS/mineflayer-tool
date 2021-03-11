@@ -11,7 +11,7 @@ import { TaskQueue } from 'mineflayer-utils'
  *
  * @param item - The item to test against.
  */
-export const standardToolFilter = ( {name} : Item): boolean => name.test(/sword|pickaxe|shovel|axe|hoe/)
+export const standardToolFilter = ({ name }: Item): boolean => name.test(/sword|pickaxe|shovel|axe|hoe/)
 
 /**
  * Options for configuring how to select what chests to go to to retrieve items.
