@@ -1,4 +1,4 @@
-<h1 align="center">Mineflayer-Tool</h1> 
+<h1 align="center">Mineflayer-Tool</h1>
 <p align="center"><i>A tool/weapon selection Mineflayer plugin for automatically selecting the best tool to use for a specific task.</i></p>
 
 <p align="center">
