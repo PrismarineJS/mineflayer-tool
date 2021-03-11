@@ -11,14 +11,7 @@ import { TemporarySubscriber, TaskQueue } from 'mineflayer-utils'
  *
  * @param item - The item to test against.
  */
-export function standardToolFilter (item: Item): boolean {
-  if (item.name.includes('sword')) return true
-  if (item.name.includes('pickaxe')) return true
-  if (item.name.includes('shovel')) return true
-  if (item.name.includes('axe')) return true
-  if (item.name.includes('hoe')) return true
-  return false
-}
+export const standardToolFilter = ({name}: Item): boolean => name.test(/sword|pickaxe|shovel|axe|hoe/)
 
 /**
  * Options for configuring how to select what chests to go to to retrieve items.
@@ -125,26 +118,19 @@ export function retrieveTools (bot: Bot, options: ToolRetrievalOptions, cb: Call
  * @param cb - The callback to run when finished.
  */
 function gotoChest (bot: Bot, location: Vec3, cb: Callback): void {
-  // @ts-expect-error
   const pathfinder = bot.pathfinder
 
   pathfinder.setGoal(new goals.GoalBlock(location.x, location.y, location.z))
 
-  const events = new TemporarySubscriber(bot)
-  events.subscribeTo('goal_reached', () => {
-    events.cleanup()
-    cb()
-  })
+  bot.once('goal_reached', cb)
 
-  events.subscribeTo('path_update', (results: ComputedPath) => {
+  bot.once('path_update', (results: ComputedPath) => {
     if (results.status === 'noPath') {
-      events.cleanup()
       cb(error('NoPath', 'No path to target block!'))
     }
   })
 
-  events.subscribeTo('goal_updated', () => {
-    events.cleanup()
+  bot.once('goal_updated', () => {
     cb(error('PathfindingInterrupted', 'Pathfinding interrupted before item could be reached.'))
   })
 }
@@ -159,10 +145,7 @@ function pullFromChest (bot: Bot, chestPos: Vec3, options: ToolRetrievalOptions,
   const chest = bot.openChest(chestBlock)
 
   chest.once('open', () => {
-    let itemsToPull: Item[] = []
-    for (const item of chest.items()) {
-      if (options.toolFilter(item)) { itemsToPull.push(item) }
-    }
+    let itemsToPull: Item[] = chest?.items().filter(options.toolFilter) ?? []
 
     if (itemsToPull.length === 0) {
       cb(undefined, false)

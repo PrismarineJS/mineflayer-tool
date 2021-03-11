@@ -72,12 +72,10 @@ export class Tool {
      *
      * @returns The number of ticks it would take to mine.
      */
-  private getDigTime (block: Block, item?: Item): number {
-    // @ts-expect-error ; entity effects not in typescript header
+  private getDigTime (block: Block, item?: Item): number { ; entity effects not in typescript header
     const effects = this.bot.entity.effects
     const enchants = item?.nbt != null ? nbt.simplify(item.nbt).Enchantments : []
-
-    // @ts-expect-error ; enchants/effects not in digTime typescript header
+ ; enchants/effects not in digTime typescript header
     return block.digTime(item?.type, false, false, false, enchants, effects)
   }
 
