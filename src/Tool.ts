@@ -3,8 +3,6 @@ import { Block } from 'prismarine-block'
 import { Item } from 'prismarine-item'
 import { retrieveTools, standardToolFilter } from './Inventory'
 import { Vec3 } from 'vec3'
-
-// @ts-expect-error ; nbt has no typescript header
 import * as nbt from 'prismarine-nbt'
 
 export type Callback = (err?: Error) => void
@@ -73,12 +71,10 @@ export class Tool {
      * @returns The number of ticks it would take to mine.
      */
   private getDigTime (block: Block, item?: Item): number {
-    // @ts-expect-error ; entity effects not in typescript header
     const effects = this.bot.entity.effects
     const enchants = item?.nbt != null ? nbt.simplify(item.nbt).Enchantments : []
 
-    // @ts-expect-error ; enchants/effects not in digTime typescript header
-    return block.digTime(item?.type, false, false, false, enchants, effects)
+    return block.digTime(item?.type ?? null, false, false, false, enchants, effects)
   }
 
   /**
