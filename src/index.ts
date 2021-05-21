@@ -11,7 +11,6 @@ export function plugin (bot: Bot): void {
     }
   }, 0)
 
-  // @ts-expect-error
   bot.tool = new Tool(bot)
 }
 
