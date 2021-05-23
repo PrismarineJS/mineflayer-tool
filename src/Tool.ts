@@ -165,3 +165,10 @@ export class Tool {
     }
   }
 }
+
+
+declare module 'mineflayer' {
+	interface Bot {
+		tool: Tool
+	}
+}
