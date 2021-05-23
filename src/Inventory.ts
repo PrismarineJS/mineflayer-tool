@@ -3,7 +3,8 @@ import { Vec3 } from 'vec3'
 import { error, Callback } from './Tool'
 import { Item } from 'prismarine-item'
 import { goals, ComputedPath } from 'mineflayer-pathfinder'
-import { TemporarySubscriber, TaskQueue } from 'mineflayer-utils'
+import { TemporarySubscriber } from './TemporarySubscriber'
+import { TaskQueue } from './TaskQueue'
 
 /**
  * A standard tool filter that returns true for all tools and false

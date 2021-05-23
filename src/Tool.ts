@@ -4,7 +4,6 @@ import { Item } from 'prismarine-item'
 import { retrieveTools, standardToolFilter } from './Inventory'
 import { Vec3 } from 'vec3'
 
-// @ts-expect-error ; nbt has no typescript header
 import * as nbt from 'prismarine-nbt'
 
 export type Callback = (err?: Error) => void
@@ -75,6 +74,7 @@ export class Tool {
   private getDigTime (block: Block, item?: Item): number {
     // @ts-expect-error ; entity effects not in typescript header
     const effects = this.bot.entity.effects
+    // @ts-expect-error
     const enchants = item?.nbt != null ? nbt.simplify(item.nbt).Enchantments : []
 
     // @ts-expect-error ; enchants/effects not in digTime typescript header
