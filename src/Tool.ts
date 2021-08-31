@@ -72,9 +72,7 @@ export class Tool {
      * @returns The number of ticks it would take to mine.
      */
   private getDigTime (block: Block, item?: Item): number {
-    // @ts-expect-error ; entity effects not in typescript header
     const effects = this.bot.entity.effects
-    // @ts-expect-error
     const enchants = item?.nbt != null ? nbt.simplify(item.nbt).Enchantments : []
 
     // @ts-expect-error ; enchants/effects not in digTime typescript header
@@ -114,7 +112,7 @@ export class Tool {
      * @param options - The options to use for equipping the correct tool.
      * @param cb - The callback.
      */
-  equipForBlock (block: Block, options: MiningEquipOptions = {}, cb: Callback = () => {}): void {
+  async equipForBlock (block: Block, options: MiningEquipOptions = {}, cb?: Callback): Promise<void> {
     let itemList: Array<Item | undefined> = [...this.bot.inventory.items()]
 
     // Add an "undefined" item if the bot has empty space in it's inventory.
@@ -128,22 +126,28 @@ export class Tool {
 
     if (itemList.length === 0) {
       if (options.getFromChest != null && options.getFromChest) {
-        retrieveTools(this.bot, {
-          toolFilter: standardToolFilter,
-          chestLocations: this.chestLocations,
-          toolCostFilter: (item: Item) => this.getDigTime(block, item),
-          maxTools: options.maxTools
-        }, (err) => {
-          if (err != null) cb(err)
-          else this.equipForBlock(block, options, cb)
-        })
+        try {
+          await retrieveTools(this.bot, {
+            toolFilter: standardToolFilter,
+            chestLocations: this.chestLocations,
+            toolCostFilter: (item: Item) => this.getDigTime(block, item),
+            maxTools: options.maxTools
+          })
+          await this.equipForBlock(block, options)
+        } catch (err: any) {
+          if (err != null && (cb != null)) cb(err)
+          throw err
+        }
+        if (cb != null) cb()
         return
       }
 
       if (options.requireHarvest != null && options.requireHarvest) {
-        cb(error('NoItem', 'Bot does not have a harvestable tool!'))
+        const err = error('NoItem', 'Bot does not have a harvestable tool!')
+        if (cb != null) cb(err)
+        throw err
       } else {
-        cb()
+        if (cb != null) cb()
       }
 
       return
@@ -153,22 +157,27 @@ export class Tool {
     // Otherwise you just create unneeded equipment calls and can potentially
     // get stuck in an infinite loop in some conditions.
     if (!this.isBetterMiningTool(block, itemList)) {
-      cb()
+      if (cb != null) cb()
       return
     }
 
     const best = itemList[0]
-    if (best != null) {
-      this.bot.equip(best, 'hand').then(() => cb()).catch(err => cb(err))
-    } else {
-      this.bot.unequip('hand').then(() => cb()).catch(err => cb(err))
+    try {
+      if (best != null) {
+        await this.bot.equip(best, 'hand')
+      } else {
+        await this.bot.unequip('hand')
+      }
+    } catch (err: any) {
+      if (cb != null) cb(err)
+      throw err
     }
+    if (cb != null) cb()
   }
 }
 
-
 declare module 'mineflayer' {
-	interface Bot {
-		tool: Tool
-	}
+  interface Bot {
+    tool: Tool
+  }
 }
