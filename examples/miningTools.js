@@ -59,8 +59,6 @@ bot.on('chat', async (username, message) => {
     await bot.tool.equipForBlock(block, {
       requireHarvest: true,
       getFromChest: true
-    }, (err) => {
-      console.info(err)
     })
     await bot.dig(block)
   } catch (err) {
