@@ -148,6 +148,7 @@ async function pullFromChest (bot: Bot, chestPos: Vec3, options: ToolRetrievalOp
     const chest = await bot.openChest(chestBlock)
 
     let itemsToPull: Item[] = []
+    // @ts-expect-error TODO: remove this line once https://github.com/PrismarineJS/mineflayer/pull/2178 is merged and released
     for (const item of chest.items()) {
       if (options.toolFilter(item)) { itemsToPull.push(item) }
     }
@@ -165,8 +166,10 @@ async function pullFromChest (bot: Bot, chestPos: Vec3, options: ToolRetrievalOp
     }
 
     for (const item of itemsToPull) {
+      // @ts-expect-error see todo
       await chest.withdraw(item.type, item.metadata, item.count)
     }
+    // @ts-expect-error see todo
     chest.close()
     await wait(200) // Wait for server to update inventory
   } catch (err: any) {
