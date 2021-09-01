@@ -2,9 +2,9 @@ import { Bot } from 'mineflayer'
 import { Vec3 } from 'vec3'
 import { error, Callback } from './Tool'
 import { Item } from 'prismarine-item'
-import { goals, ComputedPath } from 'mineflayer-pathfinder'
-import { TemporarySubscriber } from './TemporarySubscriber'
-import { TaskQueue } from './TaskQueue'
+import { goals } from 'mineflayer-pathfinder'
+import { promisify } from 'util'
+const wait = promisify(setTimeout)
 
 /**
  * A standard tool filter that returns true for all tools and false
@@ -120,32 +120,12 @@ export async function retrieveTools (bot: Bot, options: ToolRetrievalOptions, cb
  */
 async function gotoChest (bot: Bot, location: Vec3, cb?: Callback): Promise<void> {
   const pathfinder = bot.pathfinder
-  return await new Promise((resolve, reject) => {
-    pathfinder.setGoal(new goals.GoalGetToBlock(location.x, location.y, location.z))
-
-    const events = new TemporarySubscriber(bot)
-    events.subscribeTo('goal_reached', () => {
-      events.cleanup()
-      resolve()
-      if ((cb != null) && typeof cb === 'function') cb()
-    })
-
-    events.subscribeTo('path_update', (results: ComputedPath) => {
-      if (results.status === 'noPath') {
-        events.cleanup()
-        const err = error('NoPath', 'No path to target block!')
-        reject(err)
-        if ((cb != null) && typeof cb === 'function') cb(err)
-      }
-    })
-
-    events.subscribeTo('goal_updated', () => {
-      events.cleanup()
-      const err = error('PathfindingInterrupted', 'Pathfinding interrupted before item could be reached.')
-      reject(err)
-      if ((cb != null) && typeof cb === 'function') cb(err)
-    })
-  })
+  try {
+    await pathfinder.goto(new goals.GoalGetToBlock(location.x, location.y, location.z))
+  } catch (err: any) {
+    if ((cb != null) && typeof cb === 'function') cb(err)
+    throw err
+  }
 }
 
 /**
@@ -157,56 +137,43 @@ async function gotoChest (bot: Bot, location: Vec3, cb?: Callback): Promise<void
  * @returns {Promise<boolean>}
  */
 async function pullFromChest (bot: Bot, chestPos: Vec3, options: ToolRetrievalOptions, cb?: (err: Error | undefined, gotItem: boolean) => void): Promise<boolean> {
-  return await new Promise(async (resolve, reject) => {
-    const chestBlock = bot.blockAt(chestPos)
-    if (chestBlock == null) {
-      const err = error('UnloadedChunk', 'Chest is located in an unloaded chunk!')
-      if ((cb != null) && typeof cb === 'function') cb(err, false)
-      reject(err)
-      return
-    }
+  const chestBlock = bot.blockAt(chestPos)
+  if (chestBlock == null) {
+    const err = error('UnloadedChunk', 'Chest is located in an unloaded chunk!')
+    if ((cb != null) && typeof cb === 'function') cb(err, false)
+    throw err
+  }
 
+  try {
     const chest = await bot.openChest(chestBlock)
 
-    chest.once('open', () => {
-      let itemsToPull: Item[] = []
-      for (const item of chest.items()) {
-        if (options.toolFilter(item)) { itemsToPull.push(item) }
-      }
+    let itemsToPull: Item[] = []
+    for (const item of chest.items()) {
+      if (options.toolFilter(item)) { itemsToPull.push(item) }
+    }
 
-      if (itemsToPull.length === 0) {
-        resolve(false)
-        if ((cb != null) && typeof cb === 'function') cb(undefined, false)
-        return
-      }
+    if (itemsToPull.length === 0) {
+      if ((cb != null) && typeof cb === 'function') cb(undefined, false)
+      return false
+    }
 
-      itemsToPull.sort((a, b) => options.toolCostFilter(a) - options.toolCostFilter(b))
+    itemsToPull.sort((a, b) => options.toolCostFilter(a) - options.toolCostFilter(b))
 
-      const maxTools = options.maxTools ?? 1
-      if (itemsToPull.length > maxTools) {
-        itemsToPull = itemsToPull.slice(0, maxTools)
-      }
+    const maxTools = options.maxTools ?? 1
+    if (itemsToPull.length > maxTools) {
+      itemsToPull = itemsToPull.slice(0, maxTools)
+    }
 
-      const taskQueue = new TaskQueue()
-      for (const item of itemsToPull) {
-        taskQueue.add(cb2 => {
-          chest.withdraw(item.type, item.metadata, item.count).then(() => cb2).catch(err => cb2(err))
-        })
-      }
-
-      taskQueue.addSync(() => chest.close())
-      taskQueue.add(cb2 => setTimeout(cb2, 200)) // Wait for server to update inventory
-      taskQueue.runAll(err => {
-        if (err != null) {
-          reject(err)
-          if ((cb != null) && typeof cb === 'function') cb(err, false)
-          return
-        }
-        resolve(true)
-        if ((cb != null) && typeof cb === 'function') cb(undefined, true)
-      })
-    })
-  })
+    for (const item of itemsToPull) {
+      await chest.withdraw(item.type, item.metadata, item.count)
+    }
+    chest.close()
+    await wait(200) // Wait for server to update inventory
+  } catch (err: any) {
+    if ((cb != null) && typeof cb === 'function') cb(err, true)
+    throw err
+  }
+  return true
 }
 
 /**
