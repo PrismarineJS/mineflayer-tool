@@ -23,7 +23,7 @@ const bot = mineflayer.createBot({
 bot.loadPlugin(toolPlugin)
 
 // Listen for chat events
-bot.on('chat', (username, message) => {
+bot.on('chat', async (username, message) => {
   // Only listen for when someone says 'get tool'
   if (message !== 'get tool') return
 
@@ -46,17 +46,22 @@ bot.on('chat', (username, message) => {
   // Equip the best tool for mining that block
   bot.tool.equipForBlock(block)
 
-  // You can also specify other options and a callback
+  // You can also specify other options and use await
   /*
-   * const equipOptions = {
-   *   requireHarvest: true
-   * }
-   *
-   * const callback = (err) => {
-   *   if (err) console.log(err)
-   *   else bot.dig(block)
-   * }
-   *
-   * bot.tool.equipForBlock(block, options, callback)
-   */
+  const mcData = require('minecraft-data')(bot.version)
+  bot.tool.chestLocations = bot.findBlocks({
+    matching: mcData.blocksByName.chest.id,
+    maxDistance: 16,
+    count: 999
+  })
+
+  try {
+    await bot.tool.equipForBlock(block, {
+      requireHarvest: true,
+      getFromChest: true
+    })
+    await bot.dig(block)
+  } catch (err) {
+    console.log(err)
+  } */
 })

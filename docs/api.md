@@ -8,7 +8,7 @@ Welcome to the *Mineflayer-Tool* API documentation page.
 
 ## 1. Summary
 
-* `bot.tool.equipForBlock(block: Block, options?: MiningEquipOptions, cb?: (err?: Error) => void): void`
+* `bot.tool.equipForBlock(block: Block, options?: MiningEquipOptions, cb?: (err?: Error) => void): Promise<void>`
   
   Can be used to instruct the bot to equip the best tool for mining the target block. Tools that are faster are considered better.
 

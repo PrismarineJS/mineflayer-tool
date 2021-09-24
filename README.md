@@ -30,13 +30,12 @@ const toolPlugin = require('mineflayer-tool').plugin
 const bot = mineflayer.createBot({ username: 'MiningTool_Bot' })
 bot.loadPlugin(toolPlugin)
 
-bot.on('spawn', () => {
+bot.on('spawn', async () => {
   const blockPos = bot.entity.position.offset(0, -1, 0)
   const block = bot.blockAt(blockPos)
 
-  bot.tool.equipForBlock(block, {}, () => {
-    bot.dig(block)
-  })
+  await bot.tool.equipForBlock(block, {})
+  await bot.dig(block)
  })
 ```
 

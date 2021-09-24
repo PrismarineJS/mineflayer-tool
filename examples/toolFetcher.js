@@ -34,7 +34,7 @@ bot.once('spawn', () => {
 })
 
 // Listen for chat events
-bot.on('chat', (username, message) => {
+bot.on('chat', async (username, message) => {
   // Only listen for when someone says 'get tool'
   if (message !== 'mine') return
 
@@ -55,16 +55,16 @@ bot.on('chat', (username, message) => {
   bot.chat(`Getting best tool for ${block.name}`)
 
   // Equip the best tool for mining that block
-  bot.tool.equipForBlock(block, {
-    requireHarvest: true, // If true, the bot will only use tools that can harvest the block
-    getFromChest: true, // If we don't have the right tool, go find one in a chest
-    maxTools: 3 // When withdrawing from a chest, grab up to 3 tools at a time
-  }, (err) => {
-    if (err) {
-      bot.chat(err.message)
-      console.log(err)
-    } else {
-      bot.dig(block)
-    }
-  })
+  try {
+    bot.tool.equipForBlock(block, {
+      requireHarvest: true, // If true, the bot will only use tools that can harvest the block
+      getFromChest: true, // If we don't have the right tool, go find one in a chest
+      maxTools: 3 // When withdrawing from a chest, grab up to 3 tools at a time
+    })
+    await bot.dig(block)
+    console.info('Finished digging')
+  } catch (err) {
+    bot.chat(err.message)
+    console.log(err)
+  }
 })
