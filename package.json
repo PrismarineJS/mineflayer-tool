@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/TheDudeFromCI/mineflayer-tool#readme",
   "dependencies": {
-    "mineflayer": "^3.10.0",
+    "mineflayer": "^4.0.0",
     "mineflayer-pathfinder": "^1.6.1",
     "prismarine-nbt": "^2.0.0"
   },
