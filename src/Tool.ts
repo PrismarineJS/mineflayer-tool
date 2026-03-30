@@ -83,7 +83,7 @@ export class Tool {
      * Gets the item currently in the bot's hand.
      */
   private itemInHand (): Item | undefined {
-    return this.bot.inventory.slots[this.bot.getEquipmentDestSlot('hand')]
+    return this.bot.inventory.slots[this.bot.getEquipmentDestSlot('hand')] ?? undefined
   }
 
   /**
