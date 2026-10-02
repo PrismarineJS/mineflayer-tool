@@ -173,7 +173,7 @@ async function pullFromChest (bot: Bot, chestPos: Vec3, options: ToolRetrievalOp
     for (const item of itemsToPull) {
       await chest.withdraw(item.type, item.metadata, item.count)
     }
-    chest.close()
+    void chest.close()
     await wait(200) // Wait for server to update inventory
   } catch (err: any) {
     if ((cb != null) && typeof cb === 'function') cb(err, true)
