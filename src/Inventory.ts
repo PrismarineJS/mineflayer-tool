@@ -108,6 +108,12 @@ export async function retrieveTools (bot: Bot, options: ToolRetrievalOptions, cb
       throw err
     }
   }
+
+  // Every chest was checked (or there were none) and no tool was found. Returning normally here
+  // made equipForBlock call itself again with the same result, forever.
+  const err = error('NoChest', 'There are no chests with available tools in them!')
+  if ((cb != null) && typeof cb === 'function') cb(err)
+  throw err
 }
 
 /**
